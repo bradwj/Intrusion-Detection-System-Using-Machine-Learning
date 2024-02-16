@@ -16,11 +16,17 @@ Windows:
 .venv\Scripts\activate
 ```
 macOS/Linux: 
-`. .venv/bin/activate`
+```
+. .venv/bin/activate
+```
 
 
 ##### Install flask
-`pip install flask`
+```
+pip install flask
+```
 
 ##### Run the server
-`python -m flask run`
+```
+python -m flask run
+```
