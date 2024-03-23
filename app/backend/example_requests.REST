@@ -1,6 +1,23 @@
+
+GET http://127.0.0.1:5000/get_models
+
+###
+
 POST http://127.0.0.1:5000/run_engine
 content-type: application/json
 
 {
-    "model": "catboost"
+    "model": "LCCDE",
+    "parameters": {
+        "num_leaves": 70
+    }
+}
+
+###
+
+POST http://127.0.0.1:5000/run_engine
+content-type: application/json
+
+{
+    "model": "LCCDE"
 }

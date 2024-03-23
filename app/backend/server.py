@@ -6,28 +6,51 @@ import sys
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
 
-ENGINE = MLEngine()
-
 
 @app.route("/", methods=["GET"])
 def hello_world():
     return "Hello, World!"
 
 
-@app.route("/load_data", methods=["GET"])
-def load_data():
-    ENGINE.load_dataset()
-    return "Loaded dataset"
+@app.route("/get_models", methods=["GET"])
+def get_models():
+    data = {"models": Model.get_models()}
+    app.logger.info(data)
+    return data
 
 
+# Request body format:
+# {
+#     "model": $model_name // one of [LCCDE, MTH, TreeBased]
+#     "parameters": {
+#         "num_leaves": 10,
+#         "min_data_in_leaf": 10,
+#         "max_depth": 10
+#     }
+# }
 @app.route("/run_engine", methods=["POST"])
 def run_engine():
-    data = request.json
-    if data["model"] not in EngineModels._member_names_:
-        return (
-            f"Model '{data['model']}' is not a valid model. Valid models: {EngineModels._member_names_}",
-            400,
-        )
-    app.logger.info(f"Running model: {data['model']}")
-    results = ENGINE.run_engine(data["model"])
-    return results, 200
+    try:
+        data = request.json
+        if "model" not in data:
+            return {"message": "'model' field is required"}, 400
+
+        model_name = data["model"]
+        parameters = data["parameters"] if "parameters" in data else {}
+        model, err = Model.get_model(model_name)
+        if err:
+            return {"message": err}, 400
+
+        app.logger.info(f"Setting parameters")
+        if err := model.set_parameters(parameters):
+            return {"message": err}, 400
+
+        output, err = model.run()
+        if err:
+            return {"message": err}, 400
+
+        return output, 200
+
+    except Exception as e:
+        app.logger.error(e)
+        return {"message": "Internal server error"}, 500

@@ -8,3 +8,5 @@ catboost
 xgboost
 river
 imblearn
+scikit-optimize
+hyperopt
