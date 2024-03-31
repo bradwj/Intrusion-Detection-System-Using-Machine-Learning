@@ -9,7 +9,12 @@ content-type: application/json
 {
     "model": "LCCDE",
     "parameters": {
-        "num_leaves": 70
+        "lightgbm_classifier": {
+            "num_leaves": 40
+        },
+        "xgboost_classifier": {
+            "eta": 0.5
+        }
     }
 }
 

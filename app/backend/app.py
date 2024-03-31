@@ -23,9 +23,14 @@ def get_models():
 # {
 #     "model": $model_name // one of [LCCDE, MTH, TreeBased]
 #     "parameters": {
-#         "num_leaves": 10,
-#         "min_data_in_leaf": 10,
-#         "max_depth": 10
+#         $submodel_name_1: {
+#             $parameter_name_1: $parameter_value_1,
+#             $parameter_name_2: $parameter_value_2,
+#         },
+#         $submodel_name_2: {
+#             $parameter_name_1: $parameter_value_1,
+#             $parameter_name_2: $parameter_value_2,
+#         },
 #     }
 # }
 @app.route("/run_engine", methods=["POST"])

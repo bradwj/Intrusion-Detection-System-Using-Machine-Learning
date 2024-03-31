@@ -25,7 +25,109 @@ from enum import Enum
 # from imblearn.over_sampling import SMOTE
 
 
-logger = logging.getLogger("server.engine")
+logger = logging.getLogger("app.engine")
+logger.setLevel(logging.INFO)
+
+
+class Interval:
+    def __init__(self, interval_string):
+        # interval looks like "[min_val, max_val]" or "(min_val, max_val)" or "[min_val, max_val)"
+        # '[' or ']' means inclusive, '(' or ')' means exclusive
+        self.interval_string = interval_string
+        try:
+            lower_bound, upper_bound = interval_string[1:-1].split(",")
+            self.lower_bound = float(lower_bound)
+            self.upper_bound = float(upper_bound)
+            if lower_bound > upper_bound:
+                raise ValueError(
+                    f"Invalid interval string: {interval_string}. Lower bound must be less than or equal to upper bound"
+                )
+            self.lower_bound_inclusive = interval_string[0] == "["
+            self.upper_bound_inclusive = interval_string[-1] == "]"
+        except ValueError:
+            raise ValueError(f"Invalid interval string: {interval_string}")
+
+    def __contains__(self, value):
+        if self.lower_bound_inclusive and value < self.lower_bound:
+            return False
+        if not self.lower_bound_inclusive and value <= self.lower_bound:
+            return False
+        if self.upper_bound_inclusive and value > self.upper_bound:
+            return False
+        if not self.upper_bound_inclusive and value >= self.upper_bound:
+            return False
+        return True
+
+    def __str__(self):
+        return self.interval_string
+
+
+LIGHTGBM_CLASSIFIER = "lightgbm_classifier"
+XGBOOST_CLASSIFIER = "xgboost_classifier"
+CATBOOST_CLASSIFIER = "catboost_classifier"
+
+SUBMODEL_AVAILABLE_PARAMETERS = {
+    # lightgbm parameters:
+    # num_iterations, default = 100, type = int, constraints: num_iterations >= 0
+    # learning_rate, default = 0.1, type = double, constraints: learning_rate > 0.0
+    # num_leaves, default = 31, type = int, constraints: 1 < num_leaves <= 131072
+    # max_depth, default = -1, type = int
+    # min_data_in_leaf︎, default = 20, type = int, constraints: min_data_in_leaf >= 0
+    LIGHTGBM_CLASSIFIER: {
+        "num_iterations": {
+            "dtype": "int",
+            "default": 100,
+            "range": "[0,inf)",
+        },
+        "learning_rate": {
+            "dtype": "float",
+            "default": 0.1,
+            "range": "(0,inf)",
+        },
+        "num_leaves": {
+            "dtype": "int",
+            "default": 31,
+            "range": "(1,131072]",
+        },
+        "max_depth": {"dtype": "int", "default": -1},
+        "min_data_in_leaf": {
+            "dtype": "int",
+            "default": 20,
+            "range": "[0,inf)",
+        },
+    },
+    # XGBOOST parameters:
+    # eta [default=0.3, alias: learning_rate, range: [0,1]]
+    # gamma [default=0, alias: min_split_loss, range: [0,∞]]
+    # max_depth [default=6, range: [0,∞]]
+    # min_child_weight [default=1, range: [0,∞]]
+    # subsample [default=1, range: (0,1]]
+    # lambda [default=1, alias: reg_lambda, range: [0,∞]]
+    # alpha [default=0, alias: reg_alpha, range: [0,∞]]
+    # tree_method [default='auto', choices: {'auto', 'exact', 'approx', 'hist'}]
+    # max_leaves [default=0, range: [0,∞]]
+    XGBOOST_CLASSIFIER: {
+        "eta": {"dtype": "float", "default": 0.3, "range": "[0,1]"},
+        "gamma": {"dtype": "float", "default": 0, "range": "[0,inf)"},
+        "max_depth": {"dtype": "int", "default": 6, "range": "[0,inf)"},
+        "min_child_weight": {"dtype": "int", "default": 1, "range": "[0,inf)"},
+        "subsample": {"dtype": "float", "default": 1, "range": "(0,1]"},
+        "lambda": {"dtype": "float", "default": 1, "range": "[0,inf)"},
+        "alpha": {"dtype": "float", "default": 0, "range": "[0,inf)"},
+        "tree_method": {
+            "dtype": "str",
+            "default": "auto",
+            "choices": ["auto", "exact", "approx", "hist"],
+        },
+        "max_leaves": {"dtype": "int", "default": 0, "range": "[0,inf)"},
+    },
+    CATBOOST_CLASSIFIER: {
+        "boosting_type": {
+            "dtype": "str",
+            "default": "Plain",
+        },
+    },
+}
 
 
 class Model:
@@ -33,8 +135,7 @@ class Model:
         if not hasattr(self, "name"):
             raise NotImplementedError("Model must have a 'name' attribute")
         if not hasattr(self, "parameters"):
-            self.parameters = []
-        self.parameter_values = {param.name: param.value for param in self.parameters}
+            self.parameters = {}
 
     @classmethod
     def get_models(self):
@@ -42,7 +143,14 @@ class Model:
 
     @classmethod
     def get_parameter_metadata(self):
-        return [param.get_metadata() for param in self.parameters]
+        param_metadata = {}
+        for submodel, model_params in self.parameters.items():
+            submodel_param_info = SUBMODEL_AVAILABLE_PARAMETERS[submodel]
+            for param_name, param_value in model_params.items():
+                submodel_param_info[param_name]["model_default"] = param_value
+            param_metadata[submodel] = submodel_param_info
+
+        return param_metadata
 
     @classmethod
     def to_dict(self):
@@ -66,79 +174,90 @@ class Model:
 
         return model, None
 
-    def check_invalid_parameters(self, input_parameters):
-        # input_parameters in form of:
-        # ["param1": value, "param2": value, "param3": value]
-        nonexistent_params = []
-        invalid_params = []
-        for key, value in input_parameters.items():
-            if key not in [p.name for p in self.parameters]:
-                nonexistent_params.append(key)
-            else:
-                # get parameter object from name
-                param_obj = next((p for p in self.parameters if p.name == key), None)
-                if not isinstance(value, param_obj.dtype):
-                    invalid_params.append(key)
-
-        if nonexistent_params:
-            return f"Parameters {nonexistent_params} do not exist for model '{self.name}'. Valid parameters: {[p.name for p in self.parameters]}"
-        if invalid_params:
-            return f"Parameter values {invalid_params} are not valid for model '{self.name}'. Please provide parameters with their specified data types: {self.get_parameters()}"
-
-        return None
-
     def set_parameters(self, input_parameters):
-        if err := self.check_invalid_parameters(input_parameters):
-            return err
+        # validate and set parameters
+        for submodel, submodel_params in input_parameters.items():
+            if submodel not in self.parameters.keys():
+                return f"The {self.name} model does not use submodel '{submodel}'. Valid submodels: {list(self.parameters.keys())}"
 
-        for param in self.parameters:
-            if param.name in input_parameters:
-                param.value = input_parameters[param.name]
+            for param_name, param_value in submodel_params.items():
+                # validate parameter name
+                if param_name not in SUBMODEL_AVAILABLE_PARAMETERS[submodel]:
+                    return f"Parameter '{param_name}' does not exist for submodel '{submodel}'. Available parameters: {list(SUBMODEL_AVAILABLE_PARAMETERS[submodel].keys())}"
+
+                # validate parameter value
+                expected_type = SUBMODEL_AVAILABLE_PARAMETERS[submodel][param_name][
+                    "dtype"
+                ]
+                if not isinstance(param_value, eval(expected_type)):
+                    return f"Parameter value '{param_value}' for '{param_name}' is not of type {expected_type}"
+
+                # validate parameter range
+                if "range" in SUBMODEL_AVAILABLE_PARAMETERS[submodel][param_name]:
+                    expected_range = SUBMODEL_AVAILABLE_PARAMETERS[submodel][
+                        param_name
+                    ]["range"]
+                    if param_value not in Interval(expected_range):
+                        return f"Parameter value '{param_value}' for '{param_name}' is not within the expected range {expected_range}"
+
+                # validate parameter choices
+                if "choices" in SUBMODEL_AVAILABLE_PARAMETERS[submodel][param_name]:
+                    expected_choices = SUBMODEL_AVAILABLE_PARAMETERS[submodel][
+                        param_name
+                    ]["choices"]
+                    if param_value not in expected_choices:
+                        return f"Parameter value '{param_value}' for '{param_name}' is not one of the expected choices {expected_choices}"
+
+                # set parameter value
+                logger.info(f"Setting parameter '{param_name}' to '{param_value}'")
+                self.parameters[submodel][param_name] = param_value
 
 
-class Parameter:
-    # TODO: add valid range for values
-    def __init__(
-        self,
-        name: str,
-        dtype: type,
-        default=None,
-        range: tuple = None,
-        value=None,
-    ):
-        self.name = name
-        self.dtype = dtype
-        self.default = default
-        self.range = range
-        self.value = value if value is not None else default
+# class Parameter:
+#     def __init__(
+#         self,
+#         name: str,
+#         dtype: type,
+#         default=None,
+#         # constraints: callable = None,
+#         value=None,
+#     ):
+#         self.name = name
+#         self.dtype = dtype
+#         self.default = default
+#         # self.constraints = constraints if constraints is not None else lambda x: True
+#         self.value = value if value is not None else default
 
-    def get_metadata(self):
-        return {
-            "name": self.name,
-            "dtype": str(self.dtype).split("'")[1],
-            "default": self.default,
-            "range": self.range,
-        }
+#     def get_metadata(self):
+#         return {
+#             "name": self.name,
+#             "dtype": str(self.dtype).split("'")[1],
+#             "default": self.default,
+#             # "constraints": self.constraints,
+#         }
 
-    def to_dict(self):
-        return self.get_metadata() | {"value": self.value}
+#     def to_dict(self):
+#         return self.get_metadata() | {"value": self.value}
+
+# LIGHTGBM_CLASSIFIER_PARAMETERS = [
+#     Parameter("num_iterations", int, default=100),
+#     Parameter("learning_rate", float, default=0.1),
+#     Parameter("num_leaves", int, default=31),
+#     Parameter("max_depth", int, default=-1),
+#     Parameter("min_data_in_leaf", int, default=20),
+# ]
 
 
 class LCCDE(Model):
     name = "LCCDE"
-    parameters = [
-        Parameter("num_iterations", int, default=100, range=(0, None)),
-        Parameter("learning_rate", float, default=0.1, range=(0.0, None)),
-        Parameter("num_leaves", int, default=31, range=(1, 131072)),
-        Parameter("max_depth", int, default=-1, range=(0, None)),
-        Parameter("min_data_in_leaf", int, default=20, range=(0, None)),
-    ]
+    parameters = {
+        LIGHTGBM_CLASSIFIER: {},
+        XGBOOST_CLASSIFIER: {},
+        CATBOOST_CLASSIFIER: {"boosting_type": "Plain"},
+    }
 
-    # parameter_values is dict with {param.name: param_value} for each param in parameters
     def run(self):
-        logger.info(
-            f"Running {self.name} model with parameters: {self.parameter_values}"
-        )
+        logger.info(f"Running {self.name} model with parameters: {self.parameters}")
         start_time = dt.datetime.now()
 
         ###### Code from LCCDE_IDS_GlobeCom22.ipynb
@@ -183,7 +302,7 @@ class LCCDE(Model):
         # Train the LightGBM algorithm
         import lightgbm as lgb
 
-        lg = lgb.LGBMClassifier()
+        lg = lgb.LGBMClassifier(**self.parameters[LIGHTGBM_CLASSIFIER])
         lg.fit(X_train, y_train)
         y_pred = lg.predict(X_test)
         print(classification_report(y_test, y_pred))
@@ -217,7 +336,7 @@ class LCCDE(Model):
         # Train the XGBoost algorithm
         import xgboost as xgb
 
-        xg = xgb.XGBClassifier()
+        xg = xgb.XGBClassifier(**self.parameters[XGBOOST_CLASSIFIER])
 
         X_train_x = X_train.values
         X_test_x = X_test.values
@@ -256,8 +375,9 @@ class LCCDE(Model):
         # Train the CatBoost algorithm
         import catboost as cbt
 
-        cb = cbt.CatBoostClassifier(verbose=0, boosting_type="Plain")
+        # cb = cbt.CatBoostClassifier(verbose=0, boosting_type="Plain")
         # cb = cbt.CatBoostClassifier()
+        cb = cbt.CatBoostClassifier(verbose=0, **self.parameters[CATBOOST_CLASSIFIER])
 
         cb.fit(X_train, y_train)
         y_pred = cb.predict(X_test)
@@ -434,15 +554,13 @@ class LCCDE(Model):
         f1 = f1_score(yt, yp, average=None)
 
         end_time = dt.datetime.now()
-        total_duration = end_time - start_time
+        # total_duration = time.time() - start_time
         results = {
             "model": self.name,
-            "parameters": [
-                {"name": k, "value": v} for k, v in self.parameter_values.items()
-            ],
+            "parameters": self.parameters,
             "start_time": str(start_time),
             "end_time": str(end_time),
-            "total_duration": total_duration,
+            # "total_duration": total_duration,
             "results": {
                 "accuracy": accuracy,
                 "precision": precision,
@@ -458,13 +576,13 @@ class LCCDE(Model):
 # TODO
 class MTH(Model):
     name = "MTH"
-    parameters = []
+    parameters = {}
 
 
 # TODO
 class TreeBased(Model):
     name = "TreeBased"
-    parameters = []
+    parameters = {}
 
 
 # previous implementation for reference (TODO: remove after refactoring):
