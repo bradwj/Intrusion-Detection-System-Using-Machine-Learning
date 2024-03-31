@@ -78,22 +78,30 @@ SUBMODEL_AVAILABLE_PARAMETERS = {
             "dtype": "int",
             "default": 100,
             "range": "[0,inf)",
+            "description": "Number of boosting iterations.",
         },
         "learning_rate": {
             "dtype": "float",
             "default": 0.1,
             "range": "(0,inf)",
+            "description": "Shrinkage rate.",
         },
         "num_leaves": {
             "dtype": "int",
             "default": 31,
             "range": "(1,131072]",
+            "description": "Max number of leaves in one tree.",
         },
-        "max_depth": {"dtype": "int", "default": -1},
+        "max_depth": {
+            "dtype": "int",
+            "default": -1,
+            "description": "Limit the max depth for tree model. This is used to deal with over-fitting when data is small. Tree still grows leaf-wise",
+        },
         "min_data_in_leaf": {
             "dtype": "int",
             "default": 20,
             "range": "[0,inf)",
+            "description": "Minimal number of data in one leaf. Can be used to deal with over-fitting.",
         },
     },
     # XGBOOST parameters:
@@ -107,24 +115,109 @@ SUBMODEL_AVAILABLE_PARAMETERS = {
     # tree_method [default='auto', choices: {'auto', 'exact', 'approx', 'hist'}]
     # max_leaves [default=0, range: [0,∞]]
     XGBOOST_CLASSIFIER: {
-        "eta": {"dtype": "float", "default": 0.3, "range": "[0,1]"},
-        "gamma": {"dtype": "float", "default": 0, "range": "[0,inf)"},
-        "max_depth": {"dtype": "int", "default": 6, "range": "[0,inf)"},
-        "min_child_weight": {"dtype": "int", "default": 1, "range": "[0,inf)"},
-        "subsample": {"dtype": "float", "default": 1, "range": "(0,1]"},
-        "lambda": {"dtype": "float", "default": 1, "range": "[0,inf)"},
-        "alpha": {"dtype": "float", "default": 0, "range": "[0,inf)"},
+        "learning_rate": {
+            "dtype": "float",
+            "default": 0.3,
+            "range": "[0,1]",
+            "description": "Step size shrinkage used in update to prevents overfitting. After each boosting step, we can directly get the weights of new features, and eta shrinks the feature weights to make the boosting process more conservative.",
+        },
+        "gamma": {
+            "dtype": "float",
+            "default": 0,
+            "range": "[0,inf)",
+            "description": "Minimum loss reduction required to make a further partition on a leaf node of the tree. The larger gamma is, the more conservative the algorithm will be.",
+        },
+        "max_depth": {
+            "dtype": "int",
+            "default": 6,
+            "range": "[0,inf)",
+            "description": "Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit. 0 indicates no limit on depth. Beware that XGBoost aggressively consumes memory when training a deep tree. Exact tree method requires non-zero value.",
+        },
+        "min_child_weight": {
+            "dtype": "int",
+            "default": 1,
+            "range": "[0,inf)",
+            "description": "Minimum sum of instance weight (hessian) needed in a child. If the tree partition step results in a leaf node with the sum of instance weight less than min_child_weight, then the building process will give up further partitioning. In linear regression task, this simply corresponds to minimum number of instances needed to be in each node. The larger min_child_weight is, the more conservative the algorithm will be.",
+        },
+        "max_delta_step": {
+            "dtype": "int",
+            "default": 0,
+            "range": "[0,inf)",
+            "description": "Maximum delta step we allow each leaf output to be. If the value is set to 0, it means there is no constraint. If it is set to a positive value, it can help making the update step more conservative. Usually this parameter is not needed, but it might help in logistic regression when class is extremely imbalanced. Set it to value of 1-10 might help control the update.",
+        },
+        "subsample": {
+            "dtype": "float",
+            "default": 1,
+            "range": "(0,1]",
+            "description": "Subsample ratio of the training instances. Setting it to 0.5 means that XGBoost would randomly sample half of the training data prior to growing trees. and this will prevent overfitting. Subsampling will occur once in every boosting iteration.",
+        },
+        "lambda": {
+            "dtype": "float",
+            "default": 1,
+            "range": "[0,inf)",
+            "description": "L2 regularization term on weights. Increasing this value will make model more conservative.",
+        },
+        "alpha": {
+            "dtype": "float",
+            "default": 0,
+            "range": "[0,inf)",
+            "description": "L1 regularization term on weights. Increasing this value will make model more conservative.",
+        },
         "tree_method": {
             "dtype": "str",
             "default": "auto",
             "choices": ["auto", "exact", "approx", "hist"],
+            "description": "The tree construction algorithm used in XGBoost.",
         },
-        "max_leaves": {"dtype": "int", "default": 0, "range": "[0,inf)"},
+        "max_leaves": {
+            "dtype": "int",
+            "default": 0,
+            "range": "[0,inf)",
+            "description": "Maximum number of nodes to be added. Not used by exact tree method.",
+        },
     },
     CATBOOST_CLASSIFIER: {
+        "iterations": {
+            "dtype": "int",
+            "default": 1000,
+            "range": "[0,inf)",
+            "description": "The maximum number of trees that can be built when solving machine learning problems. When using other parameters that limit the number of iterations, the final number of trees may be less than the number specified in this parameter.",
+        },
+        "learning_rate": {
+            "dtype": "float",
+            "default": 0.03,
+            "range": "(0,inf)",
+            "description": "The learning rate. Used for reducing the gradient step.",
+        },
+        "sampling_frequency": {
+            "dtype": "str",
+            "default": "PerTree",
+            "choices": ["PerTree", "PerTreeLevel", "PerTreeLevelAndFeature"],
+            "description": "Frequency to sample weights and objects when building trees.",
+        },
+        "grow_policy": {
+            "dtype": "str",
+            "default": "SymmetricTree",
+            "choices": ["SymmetricTree", "Depthwise", "Lossguide"],
+            "description": "Tree growth policy. SymmetricTree -- tree is built level by level until the specified depth is reached. On each iteration, all leaves from the last tree level are split with the same condition. The resulting tree structure is always symmetric. Depthwise — A tree is built level by level until the specified depth is reached. On each iteration, all non-terminal leaves from the last tree level are split. Each leaf is split by condition with the best loss improvement. Lossguide — A tree is built leaf by leaf until the specified maximum number of leaves is reached. On each iteration, non-terminal leaf with the best loss improvement is split.",
+        },
+        "min_data_in_leaf": {
+            "dtype": "int",
+            "default": 1,
+            "range": "[0,inf)",
+            "description": "The minimum number of training samples in a leaf. CatBoost does not search for new splits in leaves with samples count less than the specified value. Can be used only with the Lossguide and Depthwise growing policies.",
+        },
+        "max_leaves": {
+            "dtype": "int",
+            "default": 31,
+            "range": "[0,inf)",
+            "description": "The maximum number of leafs in the resulting tree. Can be used only with the Lossguide growing policy.",
+        },
         "boosting_type": {
             "dtype": "str",
             "default": "Plain",
+            "choices": ["Plain", "Ordered"],
+            "description": "Boosting scheme. Ordered — Usually provides better quality on small datasets, but it may be slower than the Plain scheme. Plain — The classic gradient boosting scheme.",
         },
     },
 }
@@ -211,41 +304,6 @@ class Model:
                 # set parameter value
                 logger.info(f"Setting parameter '{param_name}' to '{param_value}'")
                 self.parameters[submodel][param_name] = param_value
-
-
-# class Parameter:
-#     def __init__(
-#         self,
-#         name: str,
-#         dtype: type,
-#         default=None,
-#         # constraints: callable = None,
-#         value=None,
-#     ):
-#         self.name = name
-#         self.dtype = dtype
-#         self.default = default
-#         # self.constraints = constraints if constraints is not None else lambda x: True
-#         self.value = value if value is not None else default
-
-#     def get_metadata(self):
-#         return {
-#             "name": self.name,
-#             "dtype": str(self.dtype).split("'")[1],
-#             "default": self.default,
-#             # "constraints": self.constraints,
-#         }
-
-#     def to_dict(self):
-#         return self.get_metadata() | {"value": self.value}
-
-# LIGHTGBM_CLASSIFIER_PARAMETERS = [
-#     Parameter("num_iterations", int, default=100),
-#     Parameter("learning_rate", float, default=0.1),
-#     Parameter("num_leaves", int, default=31),
-#     Parameter("max_depth", int, default=-1),
-#     Parameter("min_data_in_leaf", int, default=20),
-# ]
 
 
 class LCCDE(Model):
@@ -554,13 +612,13 @@ class LCCDE(Model):
         f1 = f1_score(yt, yp, average=None)
 
         end_time = dt.datetime.now()
-        # total_duration = time.time() - start_time
+        total_duration = (end_time - start_time).total_seconds()
         results = {
             "model": self.name,
             "parameters": self.parameters,
             "start_time": str(start_time),
             "end_time": str(end_time),
-            # "total_duration": total_duration,
+            "total_duration": total_duration,
             "results": {
                 "accuracy": accuracy,
                 "precision": precision,
@@ -583,139 +641,3 @@ class MTH(Model):
 class TreeBased(Model):
     name = "TreeBased"
     parameters = {}
-
-
-# previous implementation for reference (TODO: remove after refactoring):
-
-# class MLEngine:
-
-#     def __init__(self):
-#         logger.info("*** Initializing ML Engine ***")
-#         self.load_dataset()
-
-#     def load_dataset(self):
-#         logger.info("Loading dataset into memory")
-#         self.dataset_df = pd.read_csv("./data/CICIDS2017_sample_km.csv")
-#         X = self.dataset_df.drop(["Label"], axis=1)
-#         y = self.dataset_df["Label"]
-#         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-#             X, y, train_size=0.8, test_size=0.2, random_state=0
-#         )  # shuffle=False
-
-#         logger.info(
-#             f"y_train value counts before SMOTE resampling:\n{pd.Series(self.y_train).value_counts()}"
-#         )
-#         smote = SMOTE(n_jobs=-1, sampling_strategy={2: 1000, 4: 1000})
-#         self.X_train, self.y_train = smote.fit_resample(self.X_train, self.y_train)
-
-#         logger.info(
-#             f"y_train value counts after SMOTE resampling:\n{pd.Series(self.y_train).value_counts()}"
-#         )
-
-#     def validate_parameters(self, engine_model, input_parameters):
-#         valid_params = [param["name"] for param in self.PARAMETERS[engine_model]]
-#         invalid_param_names = []
-#         invalid_param_values = {}
-#         for key, value in input_parameters:
-#             if key not in valid_params:
-#                 invalid_param_names.push(key)
-#             try:
-#                 dtype = self.PARAMETERS[engine_model][key]
-#                 parsed_value = None
-#                 if ParameterType(dtype):
-#                     match ParameterType(dtype):
-#                         case ParameterType.int:
-#                             parsed_value = int(value)
-#                         case ParameterType.float:
-#                             parsed_value = float(value)
-#                         case ParameterType.str:
-#                             parsed_value = str(value)
-#                 if not parsed_value:
-#                     invalid_param_values[key] = value
-
-#         if invalid_param_names or invalid_param_values:
-#             err_msg = ""
-#             if invalid_param_names:
-#                 err_msg += f"Parameters names {invalid_param_names} are not a valid. Available parameters: {valid_params}."
-#             if invalid_param_values:
-#                 err_msg += f"\nParameter value data types are not valid: {invalid_param_values}. Please provide parameters with their specified data types: {self.PARAMETERS[engine_model]}"
-
-#     def validate_model_name(self, model_name):
-#         if model_name not in EngineModel._member_names_:
-#             return f"'{model_name}' is not a valid model. Available models: {EngineModel._member_names_}",
-
-
-#     def run_engine(self, model_name, input_parameters):
-#         if err_msg := self.validate_model_name(model_name):
-#             return {"error": err_msg}
-
-#         self.engine_model = EngineModel(model_name)
-#         model = None
-#         if self.engine_model == EngineModel.lightgbm:
-#             model = lgb.LGBMClassifier()
-#         elif self.engine_model == EngineModel.xgboost:
-#             model = xgb.XGBClassifier()
-#         elif self.engine_model == EngineModel.catboost:
-#             model = cbt.CatBoostClassifier()
-#         else:
-#             return None
-
-#         if not self.validate_parameters(self.engine_model, )
-
-#         start_time = dt.datetime.now()
-#         total_start_time = train_start_time = time.time()
-#         model.fit(self.X_train, self.y_train)
-#         train_duration = time.time() - train_start_time
-
-#         test_start_time = time.time()
-#         self.y_pred = model.predict(self.X_test)
-#         test_duration = time.time() - test_start_time
-
-#         print(classification_report(self.y_test, self.y_pred))
-#         print("Accuracy: " + str(accuracy_score(self.y_test, self.y_pred)))
-#         print(
-#             "Precision: "
-#             + str(precision_score(self.y_test, self.y_pred, average="weighted"))
-#         )
-#         print(
-#             "Recall: " + str(recall_score(self.y_test, self.y_pred, average="weighted"))
-#         )
-#         print(
-#             "Average F1: " + str(f1_score(self.y_test, self.y_pred, average="weighted"))
-#         )
-#         print(
-#             "F1 for each type of attack: "
-#             + str(f1_score(self.y_test, self.y_pred, average=None))
-#         )
-#         cb_f1 = f1_score(self.y_test, self.y_pred, average=None)
-
-#         # TODO: figure out how to return the confusion matrix (if wanted)
-#         # Plot the confusion matrix
-#         cm = confusion_matrix(self.y_test, self.y_pred)
-#         f, ax = plt.subplots(figsize=(5, 5))
-#         sns.heatmap(cm, annot=True, linewidth=0.5, linecolor="red", fmt=".0f", ax=ax)
-#         plt.xlabel("y_pred")
-#         plt.ylabel("y_true")
-#         # plt.show()
-#         total_duration = time.time() - total_start_time
-#         end_time = dt.datetime.now()
-
-#         return {
-#             "model": model_name,
-#             "start_time": str(start_time),
-#             "end_time": str(end_time),
-#             "train_duration": train_duration,
-#             "test_duration": test_duration,
-#             "total_duration": total_duration,
-#             "results": {
-#                 "accuracy": accuracy_score(self.y_test, self.y_pred),
-#                 "precision": precision_score(
-#                     self.y_test, self.y_pred, average="weighted"
-#                 ),
-#                 "recall": recall_score(self.y_test, self.y_pred, average="weighted"),
-#                 "avg_f1": f1_score(self.y_test, self.y_pred, average="weighted"),
-#                 "categorical_f1": f1_score(
-#                     self.y_test, self.y_pred, average=None
-#                 ).tolist(),
-#             },
-#         }

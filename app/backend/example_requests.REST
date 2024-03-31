@@ -13,7 +13,11 @@ content-type: application/json
             "num_leaves": 40
         },
         "xgboost_classifier": {
-            "eta": 0.5
+            "learning_rate": 0.5
+        },
+        "catboost_classifier": {
+            "iterations": 100,
+            "learning_rate": 0.1
         }
     }
 }
@@ -24,5 +28,5 @@ POST http://127.0.0.1:5000/run_engine
 content-type: application/json
 
 {
-    "model": "LCCDE"
+    "model": "LCCDE",
 }
