@@ -6,6 +6,17 @@
   flex-direction: column;
   justify-content: center;
   align-items: center; /* Center content horizontally */
+  text-align: center;
+}
+
+.App > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.App > div > button {
+  flex: 1; /* Buttons take equal space on both sides of the circle */
 }
 
 header {
@@ -14,15 +25,47 @@ header {
 }
 
 button {
-  margin: 10px;
-  padding: 10px;
-  cursor: pointer;
+  width: 150px; /* Set a specific width */
+  height: 50px; /* Set a specific height */
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: white; /* White text color */
+  font-weight: bold; /* Bold text */
+  font-size: 16px;
+  flex-grow: 0; /* Prevent button from growing */
+  flex-shrink: 0; /* Prevent button from shrinking */
+  margin: 0 20px; /* Adjust spacing around the buttons*/
+  font-family: 'Karma', serif;
 }
 
 .circle {
   width: 200px;
   height: 200px;
   border-radius: 50%; /* Makes the div a circle */
-  background-color: blue; /* Initial blue color */
-  margin: 20px auto; /* Center the circle */
+  background-image: radial-gradient(orange, green);
+  margin: 0 20px; /* Adjust spacing around the circle */
+  max-width: 200px; /* maximum size */
+  max-height: 200px; /* maximum size */
+  min-width: 200px; /* minimum size */
+  min-height: 200px; /* minimum size */
+}
+
+.green-gradient {
+  background-image: linear-gradient(to bottom right, lightgreen, darkgreen);
+  width: 20vw; /* or percentage of the viewport's width */
+  height: 5vw; /* or percentage of the viewport's width */
+  max-width: 250px; /* maximum size */
+  max-height: 50px; /* maximum size */
+  min-width: 250px; /* minimum size */
+  min-height: 50px; /* minimum size */
+}
+
+.orange-gradient {
+  background-image: linear-gradient(to bottom right, rgb(247, 193, 94), darkorange);
+  width: 20vw; /* or percentage of the viewport's width */
+  height: 5vw; /* or percentage of the viewport's width */
+  max-width: 250px; /* maximum size */
+  max-height: 50px; /* maximum size */
+  min-width: 250px; /* minimum size */
+  min-height: 50px; /* minimum size */
 }
