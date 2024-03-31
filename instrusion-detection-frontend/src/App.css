@@ -1,0 +1,28 @@
+.App {
+  background-color: #1a1a1a; /* Dark gray background */
+  color: rgb(255, 255, 255); /* White text color */
+  font-family: 'Karma', serif;
+  height: 100vh; /* Full height of the viewport */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center; /* Center content horizontally */
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+button {
+  margin: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.circle {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%; /* Makes the div a circle */
+  background-color: blue; /* Initial blue color */
+  margin: 20px auto; /* Center the circle */
+}
