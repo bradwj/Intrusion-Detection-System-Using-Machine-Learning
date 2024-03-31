@@ -1,11 +1,12 @@
 from flask import Flask, request
 from engine import *
+from tinydb import TinyDB, Query
 import logging
 import sys
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
-
+db = TinyDB('db.json')
 
 @app.route("/", methods=["GET"])
 def hello_world():
@@ -16,7 +17,11 @@ def hello_world():
 def get_models():
     data = {"models": Model.get_models()}
     app.logger.info(data)
-    return data
+    return data, 200
+
+@app.route("/get_history", methods=["GET"])
+def get_history():
+    return db.all(), 200
 
 
 # Request body format:
@@ -54,6 +59,7 @@ def run_engine():
         if err:
             return {"message": err}, 400
 
+        db.insert(output)
         return output, 200
 
     except Exception as e:
