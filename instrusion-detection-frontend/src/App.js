@@ -1,53 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './App.css';
 import { BrowserRouter as Router } from 'react-router-dom';
 
+//function for changing the circle's color
 function setCircleColor(color1, color2, circle) {
     document.querySelector('.circle').style.backgroundImage = `radial-gradient(${color1}, ${color2})`;
 }
 
+//function for resetting the circle's color
 function resetCircleColor() {
     document.querySelector('.circle').style.backgroundImage = 'radial-gradient(orange, green)';
 }
 
 function RunTest() {
+    const [models, setModels] = useState([]);
+    const [selectedModel, setSelectedModel] = useState({});
+    const [parameters, setParameters] = useState({});
+
+    useEffect(() => {
+        axios.get('/get_models')
+            .then(response => {
+                setModels(response.data.models);
+                if (response.data.models.length > 0) {
+                    setSelectedModel(response.data.models[0]);
+                    setParameters(response.data.models[0].parameters);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching models:', error);
+            });
+    }, []);
+
+    const handleModelChange = (event) => {
+        const model = models.find(model => model.name === event.target.value);
+        setSelectedModel(model);
+        setParameters(model.parameters);
+    };
+
+    const handleParameterChange = (paramName, value) => {
+        setParameters(prevParameters => ({
+            ...prevParameters,
+            [paramName]: value
+        }));
+    };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <h2 style={{ marginBottom: '10px' }}>Select Model:</h2>
-            <select style={{
-                width: '400px',
-                height: '40px',
-                backgroundColor: 'white',
-                color: 'green',
-                fontWeight: 'bold',
-                textAlign: 'center'
-            }}>
-                <option value="alg1">Tree-Based IDS</option>
-                <option value="alg2">The Leader Class and Confidence Decision Ensemble</option>
-                <option value="alg3">Multi-Tiered Hybrid IDS</option>
+            <select
+                onChange={handleModelChange}
+                style={{
+                    width: '400px',
+                    height: '40px',
+                    backgroundColor: 'white',
+                    color: 'green',
+                    fontWeight: 'bold',
+                    textAlign: 'center'
+                }}
+            >
+                {models.map(model => (
+                    <option key={model.name} value={model.name}>
+                        {model.name}
+                    </option>
+                ))}
             </select>
-            <h2 style={{ marginTop: '20px', marginBottom: '10px' }}>Select Dataset:</h2>
-            <select style={{
-                width: '400px',
-                height: '40px',
-                backgroundColor: 'white',
-                color: 'green',
-                fontWeight: 'bold',
-                textAlign: 'center'
-            }}>
-                <option value="dataset1">Dataset 1</option>
-                <option value="dataset2">Dataset 2</option>
-                <option value="dataset3">Dataset 3</option>
-            </select>
-            <button style={{
-                marginTop: '20px',
-                width: '200px',
-                height: '40px',
-                backgroundColor: 'green',
-                color: 'white',
-                fontWeight: 'bold',
-                textAlign: 'center'
-            }}>
+            <h2 style={{ marginTop: '20px', marginBottom: '10px' }}>Parameters:</h2>
+            {selectedModel.parameters && Object.keys(selectedModel.parameters).map(paramName => (
+                <div key={paramName}>
+                    <label>{paramName}:</label>
+                    <input
+                        type="text"
+                        value={parameters[paramName]}
+                        onChange={(e) => handleParameterChange(paramName, e.target.value)}
+                    />
+                </div>
+            ))}
+            <button
+                style={{
+                    marginTop: '20px',
+                    width: '200px',
+                    height: '40px',
+                    backgroundColor: 'green',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    textAlign: 'center'
+                }}
+            >
                 Run
             </button>
         </div>
