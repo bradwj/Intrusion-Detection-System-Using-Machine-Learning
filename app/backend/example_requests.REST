@@ -28,5 +28,14 @@ POST http://127.0.0.1:5000/run_engine
 content-type: application/json
 
 {
-    "model": "LCCDE",
+    "model": "LCCDE"
+}
+
+###
+
+POST http://127.0.0.1:5000/run_engine
+content-type: application/json
+
+{
+    "model": "MTH"
 }

@@ -6,7 +6,10 @@ import sys
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
-db = TinyDB('db.json')
+app.config["JSON_SORT_KEYS"] = False
+
+db = TinyDB("db.json")
+
 
 @app.route("/", methods=["GET"])
 def hello_world():
@@ -18,6 +21,7 @@ def get_models():
     data = {"models": Model.get_models()}
     app.logger.info(data)
     return data, 200
+
 
 @app.route("/get_history", methods=["GET"])
 def get_history():
