@@ -1,6 +1,41 @@
+
+GET http://127.0.0.1:5000/get_models
+
+###
+
 POST http://127.0.0.1:5000/run_engine
 content-type: application/json
 
 {
-    "model": "catboost"
+    "model": "LCCDE",
+    "parameters": {
+        "lightgbm_classifier": {
+            "num_leaves": 40
+        },
+        "xgboost_classifier": {
+            "learning_rate": 0.5
+        },
+        "catboost_classifier": {
+            "iterations": 100,
+            "learning_rate": 0.1
+        }
+    }
+}
+
+###
+
+POST http://127.0.0.1:5000/run_engine
+content-type: application/json
+
+{
+    "model": "LCCDE"
+}
+
+###
+
+POST http://127.0.0.1:5000/run_engine
+content-type: application/json
+
+{
+    "model": "MTH"
 }
