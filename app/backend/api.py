@@ -63,6 +63,8 @@ def run_engine():
         if err:
             return {"message": err}, 400
 
+        app.logger.info(output)
+
         db.insert(output)
         return output, 200
 
