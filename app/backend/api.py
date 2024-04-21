@@ -16,16 +16,17 @@ def hello_world():
     return "Hello, World!"
 
 
-@app.route("/get_models", methods=["GET"])
+@app.route("/models", methods=["GET"])
 def get_models():
     data = {"models": Model.get_models()}
     app.logger.info(data)
     return data, 200
 
 
-@app.route("/get_history", methods=["GET"])
+@app.route("/history", methods=["GET"])
 def get_history():
-    return db.all(), 200
+    history = db.all()
+    return {"history": history}, 200
 
 
 # Request body format:
