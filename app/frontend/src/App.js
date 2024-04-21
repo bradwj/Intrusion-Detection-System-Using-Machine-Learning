@@ -31,7 +31,7 @@ function App() {
                     </button>
                     <div className="circle"></div>
                     <button className="orange-gradient" onMouseEnter={() => setCircleColor('white', 'orange')} onMouseLeave={resetCircleColor} onClick={() => setShowRunModelDropdown(false)}>
-                        Retrieve and Compare Data
+                        Compare Runs
                     </button>
                 </div>
                 {showRunModelDropdown && <RunModel />}

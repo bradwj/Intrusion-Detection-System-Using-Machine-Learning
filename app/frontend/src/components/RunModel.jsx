@@ -15,6 +15,7 @@ import {
     Card,
 } from "@blueprintjs/core";
 import RunResults from "./RunResults";
+import { formatPythonVarName } from "../util";
 
 //        results = {
 //            "model": self.name,
@@ -31,27 +32,23 @@ import RunResults from "./RunResults";
 //            },
 //        }
 const MOCK_MODEL_OUTPUT = {
-    model: "LCCDE",
-    parameters: {
-        "lightgbm_classifier": {
-            "num_iterations": 100,
-            "learning_rate": 0.4,
-        },
-        "xgboost_classifier": {
-            "learning_rate": 0.3,
-        },
+    'model': 'LCCDE',
+    'parameters': {
+        'lightgbm_classifier': {},
+        'xgboost_classifier': {},
+        'catboost_classifier': { 'boosting_type': 'Plain' }
     },
-    start_time: "2021-05-01 12:00:00",
-    end_time: "2021-05-01 12:30:00",
-    total_duration: 1879,
-    results: {
-        accuracy: 0.85,
-        precision: 0.95,
-        recall: 0.6,
-        avg_f1: 0.2,
-        categorical_f1: [0.8, 0.9, 0.85],
-    },
-}
+    'start_time': '2024-04-21 16:59:37.212374',
+    'end_time': '2024-04-21 17:04:09.618285',
+    'total_duration': 272.405911,
+    'results': {
+        'accuracy': 0.9975746268656717,
+        'precision': 0.9975824670449086,
+        'recall': 0.9975746268656717,
+        'avg_f1': 0.9975490695240433,
+        'categorical_f1': [0.9983597594313832, 0.9935316946959897, 1.0, 0.9983633387888707, 0.8571428571428571, 0.9935483870967742, 0.9977827050997783]
+    }
+};
 
 const ADD_PARAM_BUTTON_STYLE = {
     alignItems: "left",
@@ -67,6 +64,7 @@ function RunModel() {
     const [parameters, setParameters] = useState({});
     const [customizedParameters, setCustomizedParameters] = useState({});
     const [modelOutput, setModelOutput] = useState();
+    const [modelCurrentlyRunning, setModelCurrentlyRunning] = useState(false);
 
     useEffect(() => {
         axios
@@ -88,13 +86,6 @@ function RunModel() {
         setSelectedModel(model);
         setParameters(model.parameters);
         setCustomizedParameters({});
-    };
-
-    const formatSubmodelName = (submodelName) => {
-        return submodelName
-            .split("_")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ");
     };
 
     const handleAddCustomizedParameter = (event, submodelName, paramName) => {
@@ -128,7 +119,12 @@ function RunModel() {
 
     const handleClickRun = () => {
         console.log("Running model with parameters:", customizedParameters);
-        setModelOutput(MOCK_MODEL_OUTPUT);
+        setModelOutput(null);
+        setModelCurrentlyRunning(true);
+        setTimeout(() => {
+            setModelOutput(MOCK_MODEL_OUTPUT);
+            setModelCurrentlyRunning(false);
+        }, 2000);
         return;
         // send request to API
         axios
@@ -139,6 +135,7 @@ function RunModel() {
             .then((response) => {
                 console.log("API response:", response.data);
                 setModelOutput(response.data);
+                setModelCurrentlyRunning(false);
             })
             .catch((error) => {
                 console.error("Error running model:", error);
@@ -198,7 +195,7 @@ function RunModel() {
                     Object.keys(selectedModel.parameters).map(
                         (submodelName) => (
                             <Section
-                                title={formatSubmodelName(submodelName)}
+                                title={formatPythonVarName(submodelName)}
                                 style={{
                                     width: "400px",
                                     padding: "0 20px",
@@ -308,6 +305,7 @@ function RunModel() {
                     )}
                 <button
                     onClick={handleClickRun}
+                    disabled={modelCurrentlyRunning}
                     style={{
                         marginTop: "20px",
                         marginBottom: "60px",
@@ -319,10 +317,10 @@ function RunModel() {
                         textAlign: "center",
                     }}
                 >
-                    Run
+                    {modelCurrentlyRunning ? "Running..." : "Run Model"}
                 </button>
             </div>
-            <RunResults modelOutput={modelOutput} />
+            <RunResults modelOutput={modelOutput} modelCurrentlyRunning={modelCurrentlyRunning} />
         </div>
     );
 }
