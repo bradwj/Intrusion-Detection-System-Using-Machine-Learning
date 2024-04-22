@@ -324,7 +324,7 @@ function RunModel() {
           {modelCurrentlyRunning ? "Running..." : "Run Model"}
         </button>
       </div>
-      <RunResults modelOutput={modelOutput} modelCurrentlyRunning={modelCurrentlyRunning} />
+      <RunResults modelOutput={modelOutput} modelCurrentlyRunning={modelCurrentlyRunning} renderResultsTitle={true} />
     </div>
   );
 }

@@ -26,6 +26,8 @@ def get_models():
 @app.route("/history", methods=["GET"])
 def get_history():
     history = db.all()
+    # sort by descending start time
+    history.sort(key=lambda x: x["start_time"], reverse=True)
     return {"history": history}, 200
 
 

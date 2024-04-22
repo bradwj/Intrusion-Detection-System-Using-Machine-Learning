@@ -60,7 +60,7 @@ const STYLE_METRIC_VALUE = {
 
 }
 
-function RunResults({ modelOutput, modelCurrentlyRunning }) {
+function RunResults({ modelOutput, modelCurrentlyRunning, renderResultsTitle, rowIndex }) {
   const [showParameters, setShowParameters] = useState(false);
 
   const handleToggleShowParameters = () => {
@@ -78,33 +78,8 @@ function RunResults({ modelOutput, modelCurrentlyRunning }) {
         margin: "10px",
       }}
     >
-      <h2>Results</h2>
-      {
-        modelOutput &&
-        Object.keys(modelOutput.results).map((metric, index) =>
-          <Card style={STYLE_METRIC_CARD} key={index}
-          >
-            <p style={STYLE_METRIC_LABEL}>{formatPythonVarName(metric)}</p>
-            {Array.isArray(modelOutput.results[metric]) ? (
-              <p style={{
-                ...STYLE_METRIC_VALUE,
-                fontSize: "16px",
-              }}>
-                {modelOutput.results[metric].map(value => value.toFixed(3)).join(", ")}
-              </p>
-            ) : (
-              <p style={{
-                ...STYLE_METRIC_VALUE,
-                backgroundColor: `rgba(${255 - (modelOutput.results[metric] * 255)}, ${(modelOutput.results[metric] * 255)}, 0, 0.5)`
-              }}>
-                {/* round metric to 4 decimal places */}
-                {modelOutput.results[metric].toFixed(6)}
-              </p>
-            )}
-          </Card>
-
-        )
-      }
+      {renderResultsTitle && <h2>Results</h2>}
+      {rowIndex != null && <h3>Row {rowIndex}</h3>}
       {!modelOutput && !modelCurrentlyRunning && <p> Run the model first to view results.</p>}
       {
         !modelOutput && modelCurrentlyRunning &&
@@ -124,7 +99,7 @@ function RunResults({ modelOutput, modelCurrentlyRunning }) {
       {modelOutput && (
         <div
           style={{
-            padding: "20px 10px",
+            padding: "0 10px",
             textAlign: "left",
             width: "100%",
           }}>
@@ -132,14 +107,45 @@ function RunResults({ modelOutput, modelCurrentlyRunning }) {
           <Text>Start time: {modelOutput.start_time}</Text>
           <Text>End time: {modelOutput.end_time}</Text>
           <Text>Total Duration: {modelOutput.total_duration.toFixed(2)} seconds</Text>
-          <Button onClick={handleToggleShowParameters} fill={true} style={{ padding: "0", margin: "0", height: "10px" }}>
-            {showParameters ? "Hide" : "Show"} Parameters
-          </Button>
-          <Collapse isOpen={showParameters}>
-            <Pre>{JSON.stringify(modelOutput.parameters, null, 2)}</Pre>
-          </Collapse>
         </div>
       )}
+      {
+        modelOutput &&
+        <>
+          {Object.keys(modelOutput.results).map((metric, index) =>
+            <Card style={STYLE_METRIC_CARD} key={index}
+            >
+              <p style={STYLE_METRIC_LABEL}>{formatPythonVarName(metric)}</p>
+              {Array.isArray(modelOutput.results[metric]) ? (
+                <p style={{
+                  ...STYLE_METRIC_VALUE,
+                  fontSize: "16px",
+                }}>
+                  {modelOutput.results[metric].map(value => value.toFixed(3)).join(", ")}
+                </p>
+              ) : (
+                <p style={{
+                  ...STYLE_METRIC_VALUE,
+                  backgroundColor: `rgba(${255 - (modelOutput.results[metric] * 255)}, ${(modelOutput.results[metric] * 255)}, 0, 0.5)`
+                }}>
+                  {/* round metric to 4 decimal places */}
+                  {modelOutput.results[metric].toFixed(6)}
+                </p>
+              )}
+            </Card>
+
+          )}
+          <div style={{ width: "100%", textAlign: "left" }}>
+            <Button onClick={handleToggleShowParameters} fill={true} style={{ padding: "0", margin: "0", height: "10px" }}>
+              {showParameters ? "Hide" : "Show"} Parameters
+            </Button>
+            <Collapse isOpen={showParameters}>
+              <Pre>{JSON.stringify(modelOutput.parameters, null, 2)}</Pre>
+            </Collapse>
+
+          </div>
+        </>
+      }
     </div >
   );
 }
