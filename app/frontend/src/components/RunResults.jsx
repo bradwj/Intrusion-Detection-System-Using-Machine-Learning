@@ -10,6 +10,7 @@ import {
   Button,
   Collapse,
   Pre,
+  Icon,
 } from "@blueprintjs/core";
 import { formatPythonVarName } from "../util";
 
@@ -60,7 +61,7 @@ const STYLE_METRIC_VALUE = {
 
 }
 
-function RunResults({ modelOutput, modelCurrentlyRunning, renderResultsTitle, rowIndex }) {
+function RunResults({ modelOutput, modelCurrentlyRunning, runError, renderResultsTitle, rowIndex }) {
   const [showParameters, setShowParameters] = useState(false);
 
   const handleToggleShowParameters = () => {
@@ -76,11 +77,27 @@ function RunResults({ modelOutput, modelCurrentlyRunning, renderResultsTitle, ro
         width: "400px",
         padding: "0 20px",
         margin: "10px",
+        textAlign: "left"
       }}
     >
       {renderResultsTitle && <h2>Results</h2>}
       {rowIndex != null && <h3>Row {rowIndex}</h3>}
-      {!modelOutput && !modelCurrentlyRunning && <p> Run the model first to view results.</p>}
+      {!modelOutput && !modelCurrentlyRunning && !runError && <p> Run the model first to view results.</p>}
+      {runError &&
+        <>
+          <p> An error occurred while running the model:</p>
+          <p>{runError}</p>
+          <Icon icon="cross-circle" intent="danger" size={100}
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              width: "100%",
+              height: "100%",
+              padding: "10px"
+            }}
+          />
+        </>}
       {
         !modelOutput && modelCurrentlyRunning &&
         <>

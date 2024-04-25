@@ -4,6 +4,7 @@ import { Column, Cell, Table } from "@blueprintjs/table";
 import { Button, HTMLTable } from "@blueprintjs/core";
 import RunResults from "./RunResults";
 import { formatPythonVarName } from "../util";
+import { showToast } from "../util/toaster";
 
 const MAX_SELECTED_ROWS = 3;
 
@@ -12,10 +13,14 @@ function RunHistory() {
   const [selectedModelIndexes, setSelectedIndexes] = useState([]);
 
   useEffect(() => {
-    axios.get("/history").then((response) => {
-      console.log(response.data);
-      setRunHistory(response.data.history);
-    });
+    axios.get("/history")
+      .then((response) => {
+        console.log(response.data);
+        setRunHistory(response.data.history);
+      }).catch((error) => {
+        console.error("Error fetching run history: ", error);
+        showToast({ message: `Error fetching run history. Please try again. ${error}`, intent: "danger" })
+      });
   }, []);
 
   /* the select button should select the row and console.log all of the data stored in runHistory for that model*/
@@ -27,7 +32,6 @@ function RunHistory() {
     else if (selectedModelIndexes.length < MAX_SELECTED_ROWS) {
       setSelectedIndexes(prev => [...prev, idx].sort((a, b) => a - b));
     }
-
   }
 
   return (
@@ -85,7 +89,6 @@ function RunHistory() {
                   <tr key={idx} style={{
                     backgroundColor: selectedModelIndexes.includes(idx) ? "#f7e3c8" : null,
                     cursor: "pointer",
-
                   }}>
                     <td>{idx}</td>
                     <td>{run.model}</td>

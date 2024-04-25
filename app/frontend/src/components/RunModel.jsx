@@ -16,6 +16,7 @@ import {
 } from "@blueprintjs/core";
 import RunResults from "./RunResults";
 import { formatPythonVarName } from "../util";
+import { showToast } from "../util/toaster";
 
 //  results = {
 //    "model": self.name,
@@ -32,7 +33,7 @@ import { formatPythonVarName } from "../util";
 //    },
 //  }
 
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 const MOCK_MODEL_OUTPUT = {
   'model': 'LCCDE',
   'parameters': {
@@ -67,6 +68,7 @@ function RunModel() {
   const [customizedParameters, setCustomizedParameters] = useState({});
   const [modelOutput, setModelOutput] = useState();
   const [modelCurrentlyRunning, setModelCurrentlyRunning] = useState(false);
+  const [runError, setRunError] = useState(null);
 
   useEffect(() => {
     axios
@@ -79,7 +81,10 @@ function RunModel() {
         }
       })
       .catch((error) => {
-        console.error("Error fetching models:", error);
+        const errorMsg = error.response.data.message ?? `${error}`;
+        const output = `Error fetching models: ${errorMsg}`;
+        console.error(output);
+        showToast({ message: output, intent: "danger" })
       });
   }, []);
 
@@ -120,12 +125,25 @@ function RunModel() {
   };
 
   const handleClickRun = () => {
+    // remove any parameters that have empty string as value
+    const customizedParameters = {};
+    for (const submodelName in customizedParameters) {
+      customizedParameters[submodelName] = {};
+      for (const paramName in customizedParameters[submodelName]) {
+        if (customizedParameters[submodelName][paramName] !== "") {
+          customizedParameters[submodelName][paramName] =
+            customizedParameters[submodelName][paramName];
+        }
+      }
+    }
+
     console.log("Running model with parameters:", customizedParameters);
+    setRunError(null);
     setModelOutput(null);
     setModelCurrentlyRunning(true);
     if (USE_MOCK_DATA) {
       setTimeout(() => {
-        setModelOutput(MOCK_MODEL_OUTPUT);
+        setModelOutput({ ...MOCK_MODEL_OUTPUT, "parameters": customizedParameters });
         setModelCurrentlyRunning(false);
       }, 2000);
       return;
@@ -142,7 +160,12 @@ function RunModel() {
         setModelCurrentlyRunning(false);
       })
       .catch((error) => {
-        console.error("Error running model:", error);
+        const errorMsg = error.response.data.message ?? `${error}`;
+        const output = `Error running model: ${errorMsg}`;
+        console.error(output);
+        setRunError(errorMsg);
+        showToast({ message: output ?? `${error}`, intent: "danger" })
+        setModelCurrentlyRunning(false);
       });
   };
 
@@ -194,7 +217,28 @@ function RunModel() {
             </option>
           ))}
         </HTMLSelect>
-        <h2>Customize Parameters</h2>
+
+        <h3>Select Dataset</h3>
+        <HTMLSelect
+          iconName="caret-down"
+          style={{
+            width: "400px",
+            height: "40px",
+            color: "#555",
+            fontWeight: "bold",
+            textAlign: "center",
+            marginBottom: "20px",
+            padding: "0px 30px",
+          }}
+        >
+          {["CICIDS2017_sample.csv", "CICIDS2017_sample_km.csv"].map((dataset) => (
+            <option key={dataset} value={dataset}>
+              {dataset}
+            </option>
+          ))}
+        </HTMLSelect>
+
+        <h3>Customize Parameters</h3>
         {selectedModel.parameters &&
           Object.keys(selectedModel.parameters).map(
             (submodelName) => (
@@ -324,7 +368,7 @@ function RunModel() {
           {modelCurrentlyRunning ? "Running..." : "Run Model"}
         </button>
       </div>
-      <RunResults modelOutput={modelOutput} modelCurrentlyRunning={modelCurrentlyRunning} renderResultsTitle={true} />
+      <RunResults modelOutput={modelOutput} modelCurrentlyRunning={modelCurrentlyRunning} runError={runError} renderResultsTitle={true} />
     </div>
   );
 }

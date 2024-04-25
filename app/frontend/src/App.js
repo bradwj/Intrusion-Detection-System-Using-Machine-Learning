@@ -4,7 +4,7 @@ import './App.css';
 import { BrowserRouter as Router } from 'react-router-dom';
 import RunModel from './components/RunModel';
 import RunHistory from './components/RunHistory';
-import { Button } from '@blueprintjs/core';
+import { Button, OverlayToaster } from '@blueprintjs/core';
 
 //function for changing the circle's color
 function setCircleColor(color1, color2, circle) {
