@@ -54,12 +54,17 @@ def run_engine():
 
         model_name = data["model"]
         parameters = data["parameters"] if "parameters" in data else {}
+        dataset = data["dataset"]
         model, err = Model.get_model(model_name)
         if err:
             return {"message": err}, 400
 
         app.logger.info(f"Setting parameters")
         if err := model.set_parameters(parameters):
+            return {"message": err}, 400
+
+        app.logger.info(f"Setting dataset")
+        if err := model.set_dataset(dataset):
             return {"message": err}, 400
 
         output, err = model.run()

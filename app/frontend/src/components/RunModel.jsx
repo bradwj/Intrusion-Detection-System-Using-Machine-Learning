@@ -36,6 +36,7 @@ import { showToast } from "../util/toaster";
 const USE_MOCK_DATA = false;
 const MOCK_MODEL_OUTPUT = {
   'model': 'LCCDE',
+  'dataset': 'CICIDS2017_sample.csv',
   'parameters': {
     'lightgbm_classifier': {},
     'xgboost_classifier': {},
@@ -69,6 +70,7 @@ function RunModel() {
   const [modelOutput, setModelOutput] = useState();
   const [modelCurrentlyRunning, setModelCurrentlyRunning] = useState(false);
   const [runError, setRunError] = useState(null);
+  const [dataset, setDataset] = useState("CICIDS2017_sample.csv");
 
   useEffect(() => {
     axios
@@ -93,6 +95,10 @@ function RunModel() {
     setSelectedModel(model);
     setParameters(model.parameters);
     setCustomizedParameters({});
+  };
+
+  const handleDatasetChange = (event) => {
+    setDataset(event.target.value);
   };
 
   const handleAddCustomizedParameter = (event, submodelName, paramName) => {
@@ -153,6 +159,7 @@ function RunModel() {
       .post("/run_engine", {
         model: selectedModel.name,
         parameters: filteredParameters,
+        dataset: dataset,
       })
       .then((response) => {
         console.log("API response:", response.data);
@@ -220,6 +227,7 @@ function RunModel() {
 
         <h3>Select Dataset</h3>
         <HTMLSelect
+          onChange={handleDatasetChange}
           iconName="caret-down"
           style={{
             width: "400px",

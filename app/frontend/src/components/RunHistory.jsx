@@ -79,6 +79,7 @@ function RunHistory() {
                 <tr>
                   <th></th>
                   <th>Model</th>
+                  <th>Dataset</th>
                   <th>Run Time</th>
                   <th>Duration (seconds)</th>
                   <th>Accuracy</th>
@@ -92,6 +93,7 @@ function RunHistory() {
                   }}>
                     <td>{idx}</td>
                     <td>{run.model}</td>
+                    <td>{run.dataset}</td>
                     <td>{run.start_time}</td>
                     <td>{Math.round(run.total_duration)}</td>
                     <td>{run.results.accuracy.toFixed(4)}</td>

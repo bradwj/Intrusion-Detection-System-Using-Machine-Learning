@@ -121,6 +121,7 @@ function RunResults({ modelOutput, modelCurrentlyRunning, runError, renderResult
             width: "100%",
           }}>
           <Text>Model: {modelOutput.model}</Text>
+          <Text>Dataset: {modelOutput.dataset}</Text>
           <Text>Start time: {modelOutput.start_time}</Text>
           <Text>End time: {modelOutput.end_time}</Text>
           <Text>Total Duration: {modelOutput.total_duration.toFixed(2)} seconds</Text>

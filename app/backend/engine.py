@@ -2,28 +2,6 @@ import time
 import logging
 from enum import Enum
 
-# import pandas as pd
-# import numpy as np
-# import matplotlib.pyplot as plt
-# import seaborn as sns
-# from sklearn.model_selection import train_test_split
-# from sklearn.metrics import (
-#     classification_report,
-#     confusion_matrix,
-#     accuracy_score,
-#     precision_score,
-#     recall_score,
-#     f1_score,
-# )
-# import lightgbm as lgb
-# import catboost as cbt
-# import xgboost as xgb
-# import time
-# from river import stream
-# from statistics import mode
-# from imblearn.over_sampling import SMOTE
-
-
 logger = logging.getLogger("app.engine")
 logger.setLevel(logging.INFO)
 
@@ -488,6 +466,9 @@ class Model:
 
         return model, None
 
+    def set_dataset(self, dataset):
+        self.dataset = dataset
+
     def set_parameters(self, input_parameters):
         # validate and set parameters
         for submodel, submodel_params in input_parameters.items():
@@ -838,6 +819,7 @@ class LCCDE(Model):
         total_duration = (end_time - start_time).total_seconds()
         results = {
             "model": self.name,
+            "dataset": self.dataset,
             "parameters": self.parameters,
             "start_time": str(start_time),
             "end_time": str(end_time),
@@ -1691,6 +1673,7 @@ class MTH(Model):
 
         results = {
             "model": self.name,
+            "dataset": self.dataset,
             "parameters": self.parameters,
             "start_time": str(start_time),
             "end_time": str(end_time),
@@ -2098,6 +2081,7 @@ class TreeBased(Model):
 
         results = {
             "model": self.name,
+            "dataset": self.dataset,
             "parameters": self.parameters,
             "start_time": str(start_time),
             "end_time": str(end_time),
