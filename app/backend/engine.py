@@ -856,7 +856,13 @@ class LCCDE(Model):
 
 class MTH(Model):
     name = "MTH"
-    parameters = {MINIBATCH_KMEANS: {"n_clusters": 1000, "random_state": 0}}
+    parameters = {
+        MINIBATCH_KMEANS: {"n_clusters": 1000, "random_state": 0},
+        DECISIONTREE_CLASSIFIER: {"random_state": 0},
+        RANDOMFOREST_CLASSIFIER: {"random_state": 0},
+        EXTRATREES_CLASSIFIER: {"random_state": 0},
+        XGBOOST_CLASSIFIER: {"n_estimators": 10},
+    }
 
     def run(self):
         logger.info(f"Running {self.name} model with parameters: {self.parameters}")
@@ -911,7 +917,8 @@ class MTH(Model):
         # use k-means to cluster the data samples and select a proportion of data from each cluster
         from sklearn.cluster import MiniBatchKMeans
 
-        kmeans = MiniBatchKMeans(n_clusters=1000, random_state=0).fit(X)
+        # kmeans = MiniBatchKMeans(n_clusters=1000, random_state=0).fit(X)
+        kmeans = MiniBatchKMeans(**self.parameters[MINIBATCH_KMEANS]).fit(X)
 
         klabel = kmeans.labels_
         df_major["klabel"] = klabel
@@ -996,7 +1003,8 @@ class MTH(Model):
         # train four base learners: decision tree. random forest, extra trees, XGBoost
 
         logger.info("Training base XGB classifier")
-        xg = xgb.XGBClassifier(n_estimators=10)
+        # xg = xgb.XGBClassifier(n_estimators=10)
+        xg = xgb.XGBClassifier(**self.parameters[XGBOOST_CLASSIFIER])
         xg.fit(X_train, y_train)
         xg_score = xg.score(X_test, y_test)
         y_predict = xg.predict(X_test)
@@ -1069,7 +1077,8 @@ class MTH(Model):
         xg_test = xg.predict(X_test)
 
         logger.info("RFC")
-        rf = RandomForestClassifier(random_state=0)
+        # rf = RandomForestClassifier(random_state=0)
+        rf = RandomForestClassifier(**self.parameters[RANDOMFOREST_CLASSIFIER])
         rf.fit(X_train, y_train)
         rf_score = rf.score(X_test, y_test)
         y_predict = rf.predict(X_test)
@@ -1153,7 +1162,8 @@ class MTH(Model):
         rf_test = rf_hpo.predict(X_test)
 
         logger.info("DTC")
-        dt = DecisionTreeClassifier(random_state=0)
+        # dt = DecisionTreeClassifier(random_state=0)
+        dt = DecisionTreeClassifier(**self.parameters[DECISIONTREE_CLASSIFIER])
         dt.fit(X_train, y_train)
         dt_score = dt.score(X_test, y_test)
         y_predict = dt.predict(X_test)
@@ -1234,7 +1244,8 @@ class MTH(Model):
         dt_test = dt_hpo.predict(X_test)
 
         logger.info("ETC")
-        et = ExtraTreesClassifier(random_state=0)
+        # et = ExtraTreesClassifier(random_state=0)
+        et = ExtraTreesClassifier(**self.parameters[EXTRATREES_CLASSIFIER])
         et.fit(X_train, y_train)
         et_score = et.score(X_test, y_test)
         y_predict = et.predict(X_test)
