@@ -93,7 +93,7 @@ function RunHistory() {
                     <td>{idx}</td>
                     <td>{run.model}</td>
                     <td>{run.start_time}</td>
-                    <td>{run.total_duration}</td>
+                    <td>{Math.round(run.total_duration)}</td>
                     <td>{run.results.accuracy.toFixed(4)}</td>
                     <td>
                       <Button
