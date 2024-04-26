@@ -126,24 +126,24 @@ function RunModel() {
 
   const handleClickRun = () => {
     // remove any parameters that have empty string as value
-    const customizedParameters = {};
+    const filteredParameters = {};
     for (const submodelName in customizedParameters) {
-      customizedParameters[submodelName] = {};
+      filteredParameters[submodelName] = {};
       for (const paramName in customizedParameters[submodelName]) {
         if (customizedParameters[submodelName][paramName] !== "") {
-          customizedParameters[submodelName][paramName] =
+          filteredParameters[submodelName][paramName] =
             customizedParameters[submodelName][paramName];
         }
       }
     }
 
-    console.log("Running model with parameters:", customizedParameters);
+    console.log("Running model with parameters:", filteredParameters);
     setRunError(null);
     setModelOutput(null);
     setModelCurrentlyRunning(true);
     if (USE_MOCK_DATA) {
       setTimeout(() => {
-        setModelOutput({ ...MOCK_MODEL_OUTPUT, "parameters": customizedParameters });
+        setModelOutput({ ...MOCK_MODEL_OUTPUT, "parameters": filteredParameters });
         setModelCurrentlyRunning(false);
       }, 2000);
       return;
@@ -152,7 +152,7 @@ function RunModel() {
     axios
       .post("/run_engine", {
         model: selectedModel.name,
-        parameters: customizedParameters,
+        parameters: filteredParameters,
       })
       .then((response) => {
         console.log("API response:", response.data);
