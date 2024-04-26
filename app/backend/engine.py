@@ -1,5 +1,4 @@
 import time
-import datetime as dt
 import logging
 from enum import Enum
 
@@ -66,6 +65,9 @@ LIGHTGBM_CLASSIFIER = "lightgbm_classifier"
 XGBOOST_CLASSIFIER = "xgboost_classifier"
 CATBOOST_CLASSIFIER = "catboost_classifier"
 MINIBATCH_KMEANS = "mini_batch_kmeans"
+DECISIONTREE_CLASSIFIER = "decision_tree_classifier"
+RANDOMFOREST_CLASSIFIER = "random_forest_classifier"
+EXTRATREES_CLASSIFIER = "extra_trees_classifier"
 
 SUBMODEL_AVAILABLE_PARAMETERS = {
     # lightgbm parameters:
@@ -121,6 +123,12 @@ SUBMODEL_AVAILABLE_PARAMETERS = {
             "default": 0.3,
             "range": "[0,1]",
             "description": "Step size shrinkage used in update to prevents overfitting. After each boosting step, we can directly get the weights of new features, and eta shrinks the feature weights to make the boosting process more conservative.",
+        },
+        "n_estimators": {
+            "dtype": "int",
+            "default": 100,
+            "range": "[0,inf)",
+            "description": "Determines the number of boosting rounds or trees to build.",
         },
         "gamma": {
             "dtype": "float",
@@ -247,6 +255,192 @@ SUBMODEL_AVAILABLE_PARAMETERS = {
             "description": "Size of the mini batches. For faster computations, you can set the batch_size greater than 256 * number of cores to enable parallelism on all cores.",
         },
     },
+    DECISIONTREE_CLASSIFIER: {
+        "criterion": {
+            "dtype": "str",
+            "default": "gini",
+            "choices": ["gini", "entropy", "log_loss"],
+            "description": "The function to measure the quality of a split. Supported criteria are 'gini' for the Gini impurity and 'log_loss' and 'entropy' both for the Shannon information gain, see Mathematical formulation.",
+        },
+        "splitter": {
+            "dtype": "str",
+            "default": "best",
+            "choices": ["best", "random"],
+            "description": "The strategy used to choose the split at each node. Supported strategies are 'best' to choose the best split and 'random' to choose the best random split.",
+        },
+        "max_depth": {
+            "dtype": "int",
+            "default": "None",
+            "range": "[0,inf)",
+            "description": "The maximum depth of the tree. If None, then nodes are expanded until all leaves are pure or until all leaves contain less than min_samples_split samples.",
+        },
+        "min_samples_split": {
+            "dtype": "int",
+            "default": "2",
+            "range": "[2,inf)",
+            "description": "The minimum number of samples required to split an internal node:",
+        },
+        "min_samples_leaf": {
+            "dtype": "int",
+            "default": "1",
+            "range": "[1,inf)",
+            "description": "The minimum number of samples required to be at a leaf node. A split point at any depth will only be considered if it leaves at least min_samples_leaf training samples in each of the left and right branches. This may have the effect of smoothing the model, especially in regression.",
+        },
+        "min_weight_fraction_leaf": {
+            "dtype": "float",
+            "default": "0.0",
+            "range": "[0.0,inf)",
+            "description": "The minimum weighted fraction of the sum total of weights (of all the input samples) required to be at a leaf node. Samples have equal weight when sample_weight is not provided.",
+        },
+        "random_state": {
+            "dtype": "int",
+            "default": "1",
+            "range": "[1,inf)",
+            "description": "Controls the randomness of the estimator. The features are always randomly permuted at each split, even if splitter is set to 'best'.",
+        },
+        "max_leaf_nodes": {
+            "dtype": "int",
+            "default": "None",
+            "range": "[0,inf)",
+            "description": "Grow a tree with max_leaf_nodes in best-first fashion. Best nodes are defined as relative reduction in impurity. If None then unlimited number of leaf nodes.",
+        },
+        "min_impurity_decrease": {
+            "dtype": "float",
+            "default": "0.0",
+            "range": "[0.0,inf)",
+            "description": "Description from the HTML.",
+        },
+        "ccp_alpha": {
+            "dtype": "float",
+            "default": "0.0",
+            "range": "[0.0,inf)",
+            "description": "Complexity parameter used for Minimal Cost-Complexity Pruning. The subtree with the largest cost complexity that is smaller than ccp_alpha will be chosen. By default, no pruning is performed. See Minimal Cost-Complexity Pruning for details.",
+        },
+    },
+    RANDOMFOREST_CLASSIFIER: {
+        "n_estimators": {
+            "dtype": "int",
+            "default": "100",
+            "range": "[10,inf)",
+            "description": "The number of trees in the forest.",
+        },
+        "criterion": {
+            "dtype": "str",
+            "default": "gini",
+            "choices": ["gini", "entropy", "log_loss"],
+            "description": "The function to measure the quality of a split. Supported criteria are 'gini' for the Gini impurity and 'log_loss' and 'entropy' both for the Shannon information gain, see Mathematical formulation.",
+        },
+        "max_depth": {
+            "dtype": "int",
+            "default": "None",
+            "range": "[0,inf)",
+            "description": "The maximum depth of the tree. If None, then nodes are expanded until all leaves are pure or until all leaves contain less than min_samples_split samples.",
+        },
+        "min_samples_split": {
+            "dtype": "int",
+            "default": "2",
+            "range": "[2,inf)",
+            "description": "The minimum number of samples required to split an internal node:",
+        },
+        "min_samples_leaf": {
+            "dtype": "int",
+            "default": "1",
+            "range": "[1,inf)",
+            "description": "The minimum number of samples required to be at a leaf node. A split point at any depth will only be considered if it leaves at least min_samples_leaf training samples in each of the left and right branches. This may have the effect of smoothing the model, especially in regression.",
+        },
+        "min_weight_fraction_leaf": {
+            "dtype": "float",
+            "default": "0.0",
+            "range": "[0,inf)",
+            "description": "he minimum weighted fraction of the sum total of weights (of all the input samples) required to be at a leaf node. Samples have equal weight when sample_weight is not provided.",
+        },
+        "max_leaf_nodes": {
+            "dtype": "int",
+            "default": "None",
+            "range": "[0,inf)",
+            "description": "Grow a tree with max_leaf_nodes in best-first fashion. Best nodes are defined as relative reduction in impurity. If None then unlimited number of leaf nodes.",
+        },
+        "min_impurity_decrease": {
+            "dtype": "float",
+            "default": "0.0",
+            "range": "[0.0,inf)",
+            "description": "A node will be split if this split induces a decrease of the impurity greater than or equal to this value.",
+        },
+        "random_state": {
+            "dtype": "int",
+            "default": "1",
+            "range": "[1,inf)",
+            "description": "Controls the randomness of the estimator. The features are always randomly permuted at each split, even if splitter is set to 'best'.",
+        },
+        "ccp_alpha": {
+            "dtype": "float",
+            "default": "0.0",
+            "range": "[0.0,inf)",
+            "description": "Complexity parameter used for Minimal Cost-Complexity Pruning. The subtree with the largest cost complexity that is smaller than ccp_alpha will be chosen. By default, no pruning is performed. See Minimal Cost-Complexity Pruning for details.",
+        },
+    },
+    EXTRATREES_CLASSIFIER: {
+        "n_estimators": {
+            "dtype": "int",
+            "default": "100",
+            "range": "[10,inf)",
+            "description": "The number of trees in the forest.",
+        },
+        "criterion": {
+            "dtype": "str",
+            "default": "gini",
+            "choices": ["gini", "entropy", "log_loss"],
+            "description": "The function to measure the quality of a split. Supported criteria are 'gini' for the Gini impurity and 'log_loss' and 'entropy' both for the Shannon information gain, see Mathematical formulation.",
+        },
+        "max_depth": {
+            "dtype": "int",
+            "default": "None",
+            "range": "[0,inf)",
+            "description": "The maximum depth of the tree. If None, then nodes are expanded until all leaves are pure or until all leaves contain less than min_samples_split samples.",
+        },
+        "min_samples_split": {
+            "dtype": "int",
+            "default": "2",
+            "range": "[2,inf)",
+            "description": "The minimum number of samples required to split an internal node:",
+        },
+        "min_samples_leaf": {
+            "dtype": "int",
+            "default": "1",
+            "range": "[1,inf)",
+            "description": "The minimum number of samples required to be at a leaf node. A split point at any depth will only be considered if it leaves at least min_samples_leaf training samples in each of the left and right branches. This may have the effect of smoothing the model, especially in regression.",
+        },
+        "min_weight_fraction_leaf": {
+            "dtype": "float",
+            "default": "0.0",
+            "range": "[0,inf)",
+            "description": "he minimum weighted fraction of the sum total of weights (of all the input samples) required to be at a leaf node. Samples have equal weight when sample_weight is not provided.",
+        },
+        "max_leaf_nodes": {
+            "dtype": "int",
+            "default": "None",
+            "range": "[0,inf)",
+            "description": "Grow a tree with max_leaf_nodes in best-first fashion. Best nodes are defined as relative reduction in impurity. If None then unlimited number of leaf nodes.",
+        },
+        "min_impurity_decrease": {
+            "dtype": "float",
+            "default": "0.0",
+            "range": "[0.0,inf)",
+            "description": "A node will be split if this split induces a decrease of the impurity greater than or equal to this value.",
+        },
+        "random_state": {
+            "dtype": "int",
+            "default": "1",
+            "range": "[1,inf)",
+            "description": "Controls the randomness of the estimator. The features are always randomly permuted at each split, even if splitter is set to 'best'.",
+        },
+        "ccp_alpha": {
+            "dtype": "float",
+            "default": "0.0",
+            "range": "[0.0,inf)",
+            "description": "Complexity parameter used for Minimal Cost-Complexity Pruning. The subtree with the largest cost complexity that is smaller than ccp_alpha will be chosen. By default, no pruning is performed. See Minimal Cost-Complexity Pruning for details.",
+        },
+    },
 }
 
 
@@ -343,7 +537,9 @@ class LCCDE(Model):
 
     def run(self):
         logger.info(f"Running {self.name} model with parameters: {self.parameters}")
-        start_time = dt.datetime.now()
+        import datetime as datetime
+
+        start_time = datetime.datetime.now()
 
         ###### Code from LCCDE_IDS_GlobeCom22.ipynb
         import warnings
@@ -638,7 +834,7 @@ class LCCDE(Model):
         avg_f1 = f1_score(yt, yp, average="weighted")
         f1 = f1_score(yt, yp, average=None)
 
-        end_time = dt.datetime.now()
+        end_time = datetime.datetime.now()
         total_duration = (end_time - start_time).total_seconds()
         results = {
             "model": self.name,
@@ -664,9 +860,9 @@ class MTH(Model):
 
     def run(self):
         logger.info(f"Running {self.name} model with parameters: {self.parameters}")
-        import datetime as dt
+        import datetime as datetime
 
-        start_time = dt.datetime.now()
+        start_time = datetime.datatetimetime.now()
 
         ###### Code from MTH_IDS_IoTJ.ipynb
         import warnings
@@ -1479,7 +1675,7 @@ class MTH(Model):
 
         res = CL_kmeans(X_train, X_test, y_train, y_test, 16)
 
-        end_time = dt.datetime.now()
+        end_time = datetime.datetime.now()
         total_duration = (end_time - start_time).total_seconds()
 
         results = {
@@ -1494,7 +1690,414 @@ class MTH(Model):
         return results, None
 
 
-# TODO
 class TreeBased(Model):
     name = "TreeBased"
-    parameters = {}
+    parameters = {
+        DECISIONTREE_CLASSIFIER: {"random_state": 0},
+        RANDOMFOREST_CLASSIFIER: {"random_state": 0},
+        EXTRATREES_CLASSIFIER: {"random_state": 0},
+        XGBOOST_CLASSIFIER: {"n_estimators": 10},
+    }
+
+    def run(self):
+        logger.info(f"Running {self.name} model with parameters: {self.parameters}")
+        import datetime as datetime
+
+        start_time = datetime.datetime.now()
+
+        ###### Code from Tree-based_IDS_GlobeCom19.ipynb
+        import warnings
+
+        warnings.filterwarnings("ignore")
+
+        import numpy as np
+        import pandas as pd
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+        from sklearn.preprocessing import LabelEncoder
+        from sklearn.model_selection import train_test_split
+        from sklearn.metrics import (
+            classification_report,
+            confusion_matrix,
+            accuracy_score,
+            precision_recall_fscore_support,
+            f1_score,
+        )
+        from sklearn.metrics import f1_score
+        from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
+        from sklearn.tree import DecisionTreeClassifier
+        import xgboost as xgb
+        from xgboost import plot_importance
+
+        df = pd.read_csv("./data/CICIDS2017_sample.csv")
+
+        # Min-max normalization
+        numeric_features = df.dtypes[df.dtypes != "object"].index
+        df[numeric_features] = df[numeric_features].apply(
+            lambda x: (x - x.min()) / (x.max() - x.min())
+        )
+        # Fill empty values by 0
+        df = df.fillna(0)
+
+        labelencoder = LabelEncoder()
+        df.iloc[:, -1] = labelencoder.fit_transform(df.iloc[:, -1])
+        X = df.drop(["Label"], axis=1).values
+        y = df.iloc[:, -1].values.reshape(-1, 1)
+        y = np.ravel(y)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, train_size=0.8, test_size=0.2, random_state=0, stratify=y
+        )
+
+        from imblearn.over_sampling import SMOTE
+
+        smote = SMOTE(
+            n_jobs=-1, sampling_strategy={4: 1500}
+        )  # Create 1500 samples for the minority class "4"
+
+        X_train, y_train = smote.fit_resample(X_train, y_train)
+
+        # Decision tree training and prediction
+        # dt = DecisionTreeClassifier(random_state=0)
+        dt = DecisionTreeClassifier(**self.parameters[DECISIONTREE_CLASSIFIER])
+        dt.fit(X_train, y_train)
+        dt_score = dt.score(X_test, y_test)
+        y_predict = dt.predict(X_test)
+        y_true = y_test
+        print("Accuracy of DT: " + str(dt_score))
+        precision, recall, fscore, none = precision_recall_fscore_support(
+            y_true, y_predict, average="weighted"
+        )
+        print("Precision of DT: " + (str(precision)))
+        print("Recall of DT: " + (str(recall)))
+        print("F1-score of DT: " + (str(fscore)))
+        print(classification_report(y_true, y_predict))
+        cm = confusion_matrix(y_true, y_predict)
+        f, ax = plt.subplots(figsize=(5, 5))
+        sns.heatmap(cm, annot=True, linewidth=0.5, linecolor="red", fmt=".0f", ax=ax)
+        plt.xlabel("y_pred")
+        plt.ylabel("y_true")
+        # plt.show()
+
+        dt_train = dt.predict(X_train)
+        dt_test = dt.predict(X_test)
+
+        # Random Forest training and prediction
+        # rf = RandomForestClassifier(random_state=0)
+        rf = RandomForestClassifier(**self.parameters[RANDOMFOREST_CLASSIFIER])
+        rf.fit(X_train, y_train)
+        rf_score = rf.score(X_test, y_test)
+        y_predict = rf.predict(X_test)
+        y_true = y_test
+        print("Accuracy of RF: " + str(rf_score))
+        precision, recall, fscore, none = precision_recall_fscore_support(
+            y_true, y_predict, average="weighted"
+        )
+        print("Precision of RF: " + (str(precision)))
+        print("Recall of RF: " + (str(recall)))
+        print("F1-score of RF: " + (str(fscore)))
+        print(classification_report(y_true, y_predict))
+        cm = confusion_matrix(y_true, y_predict)
+        f, ax = plt.subplots(figsize=(5, 5))
+        sns.heatmap(cm, annot=True, linewidth=0.5, linecolor="red", fmt=".0f", ax=ax)
+        plt.xlabel("y_pred")
+        plt.ylabel("y_true")
+        # plt.show()
+
+        rf_train = rf.predict(X_train)
+        rf_test = rf.predict(X_test)
+
+        # Extra trees training and prediction
+        # et = ExtraTreesClassifier(random_state=0)
+        et = ExtraTreesClassifier(**self.parameters[EXTRATREES_CLASSIFIER])
+        et.fit(X_train, y_train)
+        et_score = et.score(X_test, y_test)
+        y_predict = et.predict(X_test)
+        y_true = y_test
+        print("Accuracy of ET: " + str(et_score))
+        precision, recall, fscore, none = precision_recall_fscore_support(
+            y_true, y_predict, average="weighted"
+        )
+        print("Precision of ET: " + (str(precision)))
+        print("Recall of ET: " + (str(recall)))
+        print("F1-score of ET: " + (str(fscore)))
+        print(classification_report(y_true, y_predict))
+        cm = confusion_matrix(y_true, y_predict)
+        f, ax = plt.subplots(figsize=(5, 5))
+        sns.heatmap(cm, annot=True, linewidth=0.5, linecolor="red", fmt=".0f", ax=ax)
+        plt.xlabel("y_pred")
+        plt.ylabel("y_true")
+        # plt.show()
+
+        et_train = et.predict(X_train)
+        et_test = et.predict(X_test)
+
+        # XGboost training and prediction
+        # xg = xgb.XGBClassifier(n_estimators=10)
+        xg = xgb.XGBClassifier(**self.parameters[XGBOOST_CLASSIFIER])
+        xg.fit(X_train, y_train)
+        xg_score = xg.score(X_test, y_test)
+        y_predict = xg.predict(X_test)
+        y_true = y_test
+        print("Accuracy of XGBoost: " + str(xg_score))
+        precision, recall, fscore, none = precision_recall_fscore_support(
+            y_true, y_predict, average="weighted"
+        )
+        print("Precision of XGBoost: " + (str(precision)))
+        print("Recall of XGBoost: " + (str(recall)))
+        print("F1-score of XGBoost: " + (str(fscore)))
+        print(classification_report(y_true, y_predict))
+        cm = confusion_matrix(y_true, y_predict)
+        f, ax = plt.subplots(figsize=(5, 5))
+        sns.heatmap(cm, annot=True, linewidth=0.5, linecolor="red", fmt=".0f", ax=ax)
+        plt.xlabel("y_pred")
+        plt.ylabel("y_true")
+        # plt.show()
+
+        xg_train = xg.predict(X_train)
+        xg_test = xg.predict(X_test)
+
+        # Stacking model construction (ensemble for 4 base learners)
+
+        # Use the outputs of 4 base models to construct a new ensemble model
+        base_predictions_train = pd.DataFrame(
+            {
+                "DecisionTree": dt_train.ravel(),
+                "RandomForest": rf_train.ravel(),
+                "ExtraTrees": et_train.ravel(),
+                "XgBoost": xg_train.ravel(),
+            }
+        )
+        base_predictions_train.head(5)
+
+        dt_train = dt_train.reshape(-1, 1)
+        et_train = et_train.reshape(-1, 1)
+        rf_train = rf_train.reshape(-1, 1)
+        xg_train = xg_train.reshape(-1, 1)
+        dt_test = dt_test.reshape(-1, 1)
+        et_test = et_test.reshape(-1, 1)
+        rf_test = rf_test.reshape(-1, 1)
+        xg_test = xg_test.reshape(-1, 1)
+
+        x_train = np.concatenate((dt_train, et_train, rf_train, xg_train), axis=1)
+        x_test = np.concatenate((dt_test, et_test, rf_test, xg_test), axis=1)
+
+        stk = xgb.XGBClassifier().fit(x_train, y_train)
+
+        y_predict = stk.predict(x_test)
+        y_true = y_test
+        stk_score = accuracy_score(y_true, y_predict)
+        print("Accuracy of Stacking: " + str(stk_score))
+        precision, recall, fscore, none = precision_recall_fscore_support(
+            y_true, y_predict, average="weighted"
+        )
+        print("Precision of Stacking: " + (str(precision)))
+        print("Recall of Stacking: " + (str(recall)))
+        print("F1-score of Stacking: " + (str(fscore)))
+        print(classification_report(y_true, y_predict))
+        cm = confusion_matrix(y_true, y_predict)
+        f, ax = plt.subplots(figsize=(5, 5))
+        sns.heatmap(cm, annot=True, linewidth=0.5, linecolor="red", fmt=".0f", ax=ax)
+        plt.xlabel("y_pred")
+        plt.ylabel("y_true")
+        # plt.show()
+
+        # Feature selection
+        # Save the feature importance lists generated by four tree-based algorithms
+        dt_feature = dt.feature_importances_
+        rf_feature = rf.feature_importances_
+        et_feature = et.feature_importances_
+        xgb_feature = xg.feature_importances_
+
+        # calculate the average importance value of each feature
+        avg_feature = (dt_feature + rf_feature + et_feature + xgb_feature) / 4
+
+        feature = (df.drop(["Label"], axis=1)).columns.values
+        print("Features sorted by their score:")
+        print(
+            sorted(zip(map(lambda x: round(x, 4), avg_feature), feature), reverse=True)
+        )
+
+        f_list = sorted(
+            zip(map(lambda x: round(x, 4), avg_feature), feature), reverse=True
+        )
+
+        # Select the important features from top-importance to bottom-importance until the accumulated importance reaches 0.9 (out of 1)
+        Sum = 0
+        fs = []
+        for i in range(0, len(f_list)):
+            Sum = Sum + f_list[i][0]
+            fs.append(f_list[i][1])
+            if Sum >= 0.9:
+                break
+
+        X_fs = df[fs].values
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_fs, y, train_size=0.8, test_size=0.2, random_state=0, stratify=y
+        )
+
+        from imblearn.over_sampling import SMOTE
+
+        smote = SMOTE(n_jobs=-1, sampling_strategy={4: 1500})
+
+        X_train, y_train = smote.fit_resample(X_train, y_train)
+
+        # dt = DecisionTreeClassifier(random_state=0)
+        dt = DecisionTreeClassifier(**self.parameters[DECISIONTREE_CLASSIFIER])
+        dt.fit(X_train, y_train)
+        dt_score = dt.score(X_test, y_test)
+        y_predict = dt.predict(X_test)
+        y_true = y_test
+        print("Accuracy of DT: " + str(dt_score))
+        precision, recall, fscore, none = precision_recall_fscore_support(
+            y_true, y_predict, average="weighted"
+        )
+        print("Precision of DT: " + (str(precision)))
+        print("Recall of DT: " + (str(recall)))
+        print("F1-score of DT: " + (str(fscore)))
+        print(classification_report(y_true, y_predict))
+        cm = confusion_matrix(y_true, y_predict)
+        f, ax = plt.subplots(figsize=(5, 5))
+        sns.heatmap(cm, annot=True, linewidth=0.5, linecolor="red", fmt=".0f", ax=ax)
+        plt.xlabel("y_pred")
+        plt.ylabel("y_true")
+        # plt.show()
+
+        dt_train = dt.predict(X_train)
+        dt_test = dt.predict(X_test)
+
+        # rf = RandomForestClassifier(random_state=0)
+        rf = RandomForestClassifier(**self.parameters[RANDOMFOREST_CLASSIFIER])
+        rf.fit(
+            X_train, y_train
+        )  # modelin veri üzerinde öğrenmesi fit fonksiyonuyla yapılıyor
+        rf_score = rf.score(X_test, y_test)
+        y_predict = rf.predict(X_test)
+        y_true = y_test
+        print("Accuracy of RF: " + str(rf_score))
+        precision, recall, fscore, none = precision_recall_fscore_support(
+            y_true, y_predict, average="weighted"
+        )
+        print("Precision of RF: " + (str(precision)))
+        print("Recall of RF: " + (str(recall)))
+        print("F1-score of RF: " + (str(fscore)))
+        print(classification_report(y_true, y_predict))
+        cm = confusion_matrix(y_true, y_predict)
+        f, ax = plt.subplots(figsize=(5, 5))
+        sns.heatmap(cm, annot=True, linewidth=0.5, linecolor="red", fmt=".0f", ax=ax)
+        plt.xlabel("y_pred")
+        plt.ylabel("y_true")
+        # plt.show()
+
+        rf_train = rf.predict(X_train)
+        rf_test = rf.predict(X_test)
+
+        # et = ExtraTreesClassifier(random_state=0)
+        et = ExtraTreesClassifier(**self.parameters[EXTRATREES_CLASSIFIER])
+        et.fit(X_train, y_train)
+        et_score = et.score(X_test, y_test)
+        y_predict = et.predict(X_test)
+        y_true = y_test
+        print("Accuracy of ET: " + str(et_score))
+        precision, recall, fscore, none = precision_recall_fscore_support(
+            y_true, y_predict, average="weighted"
+        )
+        print("Precision of ET: " + (str(precision)))
+        print("Recall of ET: " + (str(recall)))
+        print("F1-score of ET: " + (str(fscore)))
+        print(classification_report(y_true, y_predict))
+        cm = confusion_matrix(y_true, y_predict)
+        f, ax = plt.subplots(figsize=(5, 5))
+        sns.heatmap(cm, annot=True, linewidth=0.5, linecolor="red", fmt=".0f", ax=ax)
+        plt.xlabel("y_pred")
+        plt.ylabel("y_true")
+        # plt.show()
+
+        et_train = et.predict(X_train)
+        et_test = et.predict(X_test)
+
+        # xg = xgb.XGBClassifier(n_estimators=10)
+        xg = xgb.XGBClassifier(**self.parameters[XGBOOST_CLASSIFIER])
+        xg.fit(X_train, y_train)
+        xg_score = xg.score(X_test, y_test)
+        y_predict = xg.predict(X_test)
+        y_true = y_test
+        print("Accuracy of XGBoost: " + str(xg_score))
+        precision, recall, fscore, none = precision_recall_fscore_support(
+            y_true, y_predict, average="weighted"
+        )
+        print("Precision of XGBoost: " + (str(precision)))
+        print("Recall of XGBoost: " + (str(recall)))
+        print("F1-score of XGBoost: " + (str(fscore)))
+        print(classification_report(y_true, y_predict))
+        cm = confusion_matrix(y_true, y_predict)
+        f, ax = plt.subplots(figsize=(5, 5))
+        sns.heatmap(cm, annot=True, linewidth=0.5, linecolor="red", fmt=".0f", ax=ax)
+        plt.xlabel("y_pred")
+        plt.ylabel("y_true")
+        # plt.show()
+
+        xg_train = xg.predict(X_train)
+        xg_test = xg.predict(X_test)
+
+        base_predictions_train = pd.DataFrame(
+            {
+                "DecisionTree": dt_train.ravel(),
+                "RandomForest": rf_train.ravel(),
+                "ExtraTrees": et_train.ravel(),
+                "XgBoost": xg_train.ravel(),
+            }
+        )
+        base_predictions_train.head(5)
+
+        dt_train = dt_train.reshape(-1, 1)
+        et_train = et_train.reshape(-1, 1)
+        rf_train = rf_train.reshape(-1, 1)
+        xg_train = xg_train.reshape(-1, 1)
+        dt_test = dt_test.reshape(-1, 1)
+        et_test = et_test.reshape(-1, 1)
+        rf_test = rf_test.reshape(-1, 1)
+        xg_test = xg_test.reshape(-1, 1)
+
+        x_train = np.concatenate((dt_train, et_train, rf_train, xg_train), axis=1)
+        x_test = np.concatenate((dt_test, et_test, rf_test, xg_test), axis=1)
+
+        stk = xgb.XGBClassifier().fit(x_train, y_train)
+        y_predict = stk.predict(x_test)
+        y_true = y_test
+        stk_score = accuracy_score(y_true, y_predict)
+        print("Accuracy of Stacking: " + str(stk_score))
+        precision, recall, fscore, none = precision_recall_fscore_support(
+            y_true, y_predict, average="weighted"
+        )
+        f1 = f1_score(y_true, y_predict, average=None)
+        print("Precision of Stacking: " + (str(precision)))
+        print("Recall of Stacking: " + (str(recall)))
+        print("F1-score of Stacking: " + (str(fscore)))
+        print(classification_report(y_true, y_predict))
+        cm = confusion_matrix(y_true, y_predict)
+        f, ax = plt.subplots(figsize=(5, 5))
+        sns.heatmap(cm, annot=True, linewidth=0.5, linecolor="red", fmt=".0f", ax=ax)
+        plt.xlabel("y_pred")
+        plt.ylabel("y_true")
+        # plt.show()
+
+        end_time = datetime.datetime.now()
+        total_duration = (end_time - start_time).total_seconds()
+
+        results = {
+            "model": self.name,
+            "parameters": self.parameters,
+            "start_time": str(start_time),
+            "end_time": str(end_time),
+            "total_duration": total_duration,
+            "results": {
+                "accuracy": stk_score,
+                "precision": precision,
+                "recall": recall,
+                "avg_f1": fscore,
+                "categorical_f1": f1.tolist(),
+            },
+        }
+
+        return results, None
