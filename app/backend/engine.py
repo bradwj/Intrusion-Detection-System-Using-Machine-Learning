@@ -658,7 +658,6 @@ class LCCDE(Model):
         return results, None
 
 
-# TODO : ME
 class MTH(Model):
     name = "MTH"
     parameters = {MINIBATCH_KMEANS: {"n_clusters": 1000, "random_state": 0}}
